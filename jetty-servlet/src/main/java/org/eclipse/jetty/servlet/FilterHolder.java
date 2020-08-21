@@ -166,20 +166,24 @@ public class FilterHolder extends Holder<Filter>
             return;
 
         Filter filter = (Filter)o;
+        // destroy the wrapped filter, in case there is special behaviour
+        filter.destroy();
         // need to use the unwrapped filter because lifecycle callbacks such as
         // postconstruct and predestroy are based off the classname and the wrapper
         // classes are unknown outside the ServletHolder
         getServletHandler().destroyFilter(unwrap(filter));
-        // destroy the wrapped filter, in case there is special behaviour
-        filter.destroy();
     }
 
     private Filter wrap(final Filter filter)
     {
         Filter ret = filter;
-        for (FilterHolder.WrapperFunction wrapperFunction : getServletHandler().getServletContextHandler().getBeans(FilterHolder.WrapperFunction.class))
+        ServletContextHandler contextHandler = getServletHandler().getServletContextHandler();
+        if (contextHandler != null)
         {
-            ret = wrapperFunction.wrapFilter(ret);
+            for (FilterHolder.WrapperFunction wrapperFunction : getServletHandler().getServletContextHandler().getBeans(FilterHolder.WrapperFunction.class))
+            {
+                ret = wrapperFunction.wrapFilter(ret);
+            }
         }
         return ret;
     }
